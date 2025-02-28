@@ -30,7 +30,7 @@ use unicode_width::UnicodeWidthChar;
 ///
 /// # Example
 /// ```rust
-/// let gradient_block = tui_gradientblock {
+/// let gradient_block = TuiGradientblock {
 ///     bordertype: BorderStyle::Solid,
 ///     fill: Fill::SolidColor((255, 0, 0)),
 ///     top_titles: vec![("Top Title".to_owned(), TitleAlignment::Center, None)],
@@ -43,7 +43,7 @@ use unicode_width::UnicodeWidthChar;
 /// ```
 
 #[derive(Clone)]
-pub struct tui_gradientblock {
+pub struct TuiGradientblock {
     bordertype: BorderStyle,
     fill: Fill,
     top_titles: Vec<(String, TitleAlignment, Option<(Vec<(u8, u8, u8)>, f32)>)>,
@@ -186,7 +186,7 @@ pub struct BorderStyleInfo {
     pub left_center: char,
 }
 
-impl tui_gradientblock {
+impl TuiGradientblock {
     pub fn new(area: &Rect, split_segments: SplitBorderSegments) -> Self {
         Self {
             bordertype: BorderStyle::Plain,
@@ -248,11 +248,9 @@ impl tui_gradientblock {
     /// let result = interpolate_color(start_color, end_color, t, factor);
     /// ```
     /// In this example, `result` will contain an RGB value that is a mix of red and blue, producing purple.
-    ///
     /// # Note
     /// - The interpolation is calculated using a smooth function based on `t` raised to the power of `factor`,
     ///   which controls the rate of transition between the `start` and `end` colors.
-
     pub fn interpolate_color(
         start: (u8, u8, u8),
         end: (u8, u8, u8),
@@ -316,18 +314,17 @@ impl tui_gradientblock {
     /// ```
     /// In the above example, the `gradient_text` will be a vector of `Span`s with the text "Hello, World!"
     /// styled with a gradient transitioning from red to green to blue.
-    ///
     /// # Note
     /// - The `interpolate_color` function is used internally to calculate the intermediate colors based on the
     ///   position of the character relative to the total width of the text.
 
     pub fn create_gradient_text(
-        text: &String,
+        text: &str,
         colors: Vec<(u8, u8, u8)>,
         factor: f32,
     ) -> Vec<Span<'static>> {
         let mut gradient_colors = Vec::new();
-        
+
         let char_widths: Vec<usize> = text.chars().map(|c| c.width().unwrap_or(1)).collect();
         let total_width: usize = char_widths.iter().sum();
 
@@ -375,14 +372,14 @@ impl tui_gradientblock {
     ///
     /// # Example 1: Applying a gradient to the top border
     /// ```
-    /// let border = tui_gradientblock::new().set_gradients(vec![
+    /// let border = TuiGradientblock::new().set_gradients(vec![
     ///     (GradientSegments::Top, vec![(255, 0, 0), (0, 0, 255)], 0.5),
     /// ]);
     /// ```
     ///
     /// # Example 2: Applying a solid color to the right border
     /// ```
-    /// let border = tui_gradientblock::new().set_gradients(vec![
+    /// let border = TuiGradientblock::new().set_gradients(vec![
     ///     (GradientSegments::Right, vec![(50, 50, 50), (50, 50, 50)], 1.0),
     /// ]);
     /// ```
@@ -478,17 +475,17 @@ impl tui_gradientblock {
     ///
     /// # Example 1: Using a standard border style
     /// ```
-    /// let border = tui_gradientblock::new().border_style(BorderStyle::Double);
+    /// let border = TuiGradientblock::new().border_style(BorderStyle::Double);
     /// ```
     ///
     /// # Example 2: Using a miscellaneous border style
     /// ```
-    /// let border = tui_gradientblock::new().border_style(BorderStyle::MiscBorder(MiscBorderTypes::Misc2));
+    /// let border = TuiGradientblock::new().border_style(BorderStyle::MiscBorder(MiscBorderTypes::Misc2));
     /// ```
     ///
     /// # Example 3: Using a custom border type
     /// ```
-    /// let border = tui_gradientblock::new()
+    /// let border = TuiGradientblock::new()
     ///     .border_style(BorderStyle::CustomBorderType)
     ///     .top_left('╔')
     ///     .top_right('╗')
@@ -510,7 +507,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let block = tui_gradientblock::new().border_style(BorderStyle::Double);
+    /// let block = TuiGradientblock::new().border_style(BorderStyle::Double);
     /// ```
     pub fn border_style(mut self, style: BorderStyle) -> Self {
         match &style {
@@ -598,7 +595,7 @@ impl tui_gradientblock {
     ///
     /// # Example 1: Without Gradient
     /// ```
-    /// let border = tui_gradientblock::new().top_titles(vec![
+    /// let border = TuiGradientblock::new().top_titles(vec![
     ///     ("Header", TitleAlignment::Left, None),
     /// ]);
     /// ```
@@ -606,7 +603,7 @@ impl tui_gradientblock {
     /// # Example 2: With Gradient
     /// In this example, we use two different colors for the gradient (Red to Blue).
     /// ```
-    /// let border = tui_gradientblock::new().top_titles(vec![
+    /// let border = TuiGradientblock::new().top_titles(vec![
     ///     ("Header", TitleAlignment::Center, Some((vec![(255, 0, 0), (0, 0, 255)], 0.5))),
     /// ]);
     /// ```
@@ -627,7 +624,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let border = tui_gradientblock::new().top_right('#');
+    /// let border = TuiGradientblock::new().top_right('#');
     /// ```
     pub fn top_right(mut self, symb: char) -> Self {
         self.border_symbols.top_right = Some(symb);
@@ -641,7 +638,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let border = tui_gradientblock::new().top_left('*');
+    /// let border = TuiGradientblock::new().top_left('*');
     /// ```
     pub fn top_left(mut self, symb: char) -> Self {
         self.border_symbols.top_left = Some(symb);
@@ -655,7 +652,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let border = tui_gradientblock::new().bottom_right('%');
+    /// let border = TuiGradientblock::new().bottom_right('%');
     /// ```
     pub fn bottom_right(mut self, symb: char) -> Self {
         self.border_symbols.bottom_right = Some(symb);
@@ -669,7 +666,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let border = tui_gradientblock::new().bottom_left('@');
+    /// let border = TuiGradientblock::new().bottom_left('@');
     /// ```
     pub fn bottom_left(mut self, symb: char) -> Self {
         self.border_symbols.bottom_left = Some(symb);
@@ -683,7 +680,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let border = tui_gradientblockr::new().bottom_horizontal_symbol('-');
+    /// let border = TuiGradientblockr::new().bottom_horizontal_symbol('-');
     /// ```
     pub fn bottom_horizontal_symbol(mut self, symb: char) -> Self {
         self.border_symbols.bottom_horizontal = Some(symb);
@@ -711,7 +708,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let border = tui_gradientblock::new().right_vertical_symbol('|');
+    /// let border = TuiGradientblock::new().right_vertical_symbol('|');
     /// ```
     pub fn right_vertical_symbol(mut self, symb: char) -> Self {
         self.border_symbols.right_vertical = Some(symb);
@@ -721,7 +718,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let widget = tui_gradientblock::new().left_vertical_symbol('|');
+    /// let widget = TuiGradientblock::new().left_vertical_symbol('|');
     /// ```
     pub fn left_vertical_symbol(mut self, symb: char) -> Self {
         self.border_symbols.left_vertical = Some(symb);
@@ -732,7 +729,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let widget = tui_gradientblock::new().top_center_symbol('─');
+    /// let widget = TuiGradientblock::new().top_center_symbol('─');
     /// ```
     pub fn top_center_symbol(mut self, symb: char) -> Self {
         self.border_symbols.top_center = Some(symb);
@@ -743,7 +740,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let widget = tui_gradientblock::new().bottom_center_symbol('═');
+    /// let widget = TuiGradientblock::new().bottom_center_symbol('═');
     /// ```
     pub fn bottom_center_symbol(mut self, symb: char) -> Self {
         self.border_symbols.bottom_center = Some(symb);
@@ -754,7 +751,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let widget = tui_gradientblock::new().left_center_symbol('+');
+    /// let widget = TuiGradientblock::new().left_center_symbol('+');
     /// ```
     pub fn left_center_symbol(mut self, symb: char) -> Self {
         self.border_symbols.left_center = Some(symb);
@@ -765,7 +762,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let widget = tui_gradientblock::new().right_center_symbol('+');
+    /// let widget = TuiGradientblock::new().right_center_symbol('+');
     /// ```
     pub fn right_center_symbol(mut self, symb: char) -> Self {
         self.border_symbols.right_center = Some(symb);
@@ -776,7 +773,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let widget = tui_gradientblock::new().top_horizontal_right_symbol('┐');
+    /// let widget = TuiGradientblock::new().top_horizontal_right_symbol('┐');
     /// ```
     pub fn top_horizontal_right_symbol(mut self, symb: char) -> Self {
         self.border_symbols.top_horizontal_right = Some(symb);
@@ -786,7 +783,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let block = tui_gradientblock::new().bottom_horizontal_right_symbol('*');
+    /// let block = TuiGradientblock::new().bottom_horizontal_right_symbol('*');
     /// ```
     pub fn bottom_horizontal_right_symbol(mut self, symb: char) -> Self {
         self.border_symbols.bottom_horizontal_right = Some(symb);
@@ -797,7 +794,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let block = tui_gradientblock::new().top_horizontal_left_symbol('=');
+    /// let block = TuiGradientblock::new().top_horizontal_left_symbol('=');
     /// ```
     pub fn top_horizontal_left_symbol(mut self, symb: char) -> Self {
         self.border_symbols.top_horizontal_left = Some(symb);
@@ -808,7 +805,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let block = tui_gradientblock::new().bottom_horizontal_left_symbol('=');
+    /// let block = TuiGradientblock::new().bottom_horizontal_left_symbol('=');
     /// ```
     pub fn bottom_horizontal_left_symbol(mut self, symb: char) -> Self {
         self.border_symbols.bottom_horizontal_left = Some(symb);
@@ -819,7 +816,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let block = tui_gradientblock::new().top_vertical_right_symbol('|');
+    /// let block = TuiGradientblock::new().top_vertical_right_symbol('|');
     /// ```
     pub fn top_vertical_right_symbol(mut self, symb: char) -> Self {
         self.border_symbols.top_vertical_right = Some(symb);
@@ -830,7 +827,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let block = tui_gradientblock::new().bottom_vertical_right_symbol('|');
+    /// let block = TuiGradientblock::new().bottom_vertical_right_symbol('|');
     /// ```
     pub fn bottom_vertical_right_symbol(mut self, symb: char) -> Self {
         self.border_symbols.bottom_vertical_right = Some(symb);
@@ -841,7 +838,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let block = tui_gradientblock::new().top_vertical_left_symbol('|');
+    /// let block = TuiGradientblock::new().top_vertical_left_symbol('|');
     /// ```
     pub fn top_vertical_left_symbol(mut self, symb: char) -> Self {
         self.border_symbols.top_vertical_left = Some(symb);
@@ -852,7 +849,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let block = tui_gradientblock::new().bottom_vertical_left_symbol('|');
+    /// let block = TuiGradientblock::new().bottom_vertical_left_symbol('|');
     /// ```
     pub fn bottom_vertical_left_symbol(mut self, symb: char) -> Self {
         self.border_symbols.bottom_vertical_left = Some(symb);
@@ -865,7 +862,7 @@ impl tui_gradientblock {
     ///
     /// # Example
     /// ```
-    /// let block = tui_gradientblock::new().fill_string(String::from("Hello"));
+    /// let block = TuiGradientblock::new().fill_string(String::from("Hello"));
     /// ```
     pub fn fill_string(mut self, string: String) -> Self {
         self.fill.fill_string = Some(string);
@@ -879,7 +876,7 @@ impl tui_gradientblock {
     /// # Example
     /// ```
     /// let colors = vec![(255, 0, 0), (0, 255, 0), (0, 0, 255)];
-    /// let block = tui_gradientblock::new().fill_gradient(colors, 0.5);
+    /// let block = TuiGradientblock::new().fill_gradient(colors, 0.5);
     /// ```
     pub fn fill_gradient(mut self, colors: Vec<(u8, u8, u8)>, factor: f32) -> Self {
         self.fill.gradient = Some((colors, factor));
@@ -1581,7 +1578,7 @@ impl tui_gradientblock {
     ///
     /// # Example:
     /// ```rust
-    /// let widget = tui_gradientblock::new();
+    /// let widget = TuiGradientblock::new();
     /// let mut buffer = Buffer::new();
     /// widget.render_top_vertical_right_ln(&mut buffer);
     /// ```
@@ -1635,7 +1632,7 @@ impl tui_gradientblock {
     ///
     /// # Example:
     /// ```rust
-    /// let widget = tui_gradientblock::new();
+    /// let widget = TuiGradientblock::new();
     /// let mut buffer = Buffer::new();
     /// widget.render_bottom_vertical_right_ln(&mut buffer);
     /// ```
@@ -1724,7 +1721,7 @@ impl tui_gradientblock {
         }
     }
 
-    /// Renders the bottom titles for the `tui_gradientblock` widget, with optional gradient support.
+    /// Renders the bottom titles for the `TuiGradientblock` widget, with optional gradient support.
     ///
     /// # Parameters:
     /// - `area`: A `Rc<Rect>` that defines the area where the bottom titles will be rendered.
@@ -1767,7 +1764,7 @@ impl tui_gradientblock {
         }
     }
 
-    /// Renders the top titles for the `tui_gradientblock` widget, with optional gradient support.
+    /// Renders the top titles for the `TuiGradientblock` widget, with optional gradient support.
     ///
     /// # Parameters:
     /// - `area`: A `Rc<Rect>` that defines the area where the top titles will be rendered.
@@ -1783,7 +1780,7 @@ impl tui_gradientblock {
     ///
     /// # Example:
     /// ```rust
-    /// let widget = tui_gradientblock::new();
+    /// let widget = TuiGradientblock::new();
     /// let area = Rc::new(Rect::new(0, 0, 20, 5));
     /// let mut buffer = Buffer::new();
     /// widget.render_top_titles(area, &mut buffer);
@@ -1818,7 +1815,7 @@ impl tui_gradientblock {
         }
     }
 
-    /// Renders the fill for the `tui_gradientblock` widget, including optional gradient rendering.
+    /// Renders the fill for the `TuiGradientblock` widget, including optional gradient rendering.
     ///
     /// # Parameters:
     /// - `area`: A `Rc<Rect>` that defines the area in which to render the fill.
@@ -1838,7 +1835,7 @@ impl tui_gradientblock {
     ///
     /// # Example:
     /// ```rust
-    /// let widget = tui_gradientblock::new();
+    /// let widget = TuiGradientblock::new();
     /// let area = Rc::new(Rect::new(0, 0, 10, 5));
     /// let mut buffer = Buffer::new();
     /// widget.render_fill(area, &mut buffer);
@@ -1848,14 +1845,16 @@ impl tui_gradientblock {
         string.push(' ');
         if self.fill.gradient.is_none() {
             Paragraph::new(string.repeat(area.width as usize * string.len()).to_owned())
-            .wrap(Wrap { trim: true })
-            .block(Block::default().borders(Borders::ALL))
-            .render(*area, buf);
+                .wrap(Wrap { trim: true })
+                .block(Block::default().borders(Borders::ALL))
+                .render(*area, buf);
         } else {
             // Get a reference to the gradient and its color values
             let gradient = self.fill.gradient.as_ref().unwrap();
             let gradient_text = Self::create_gradient_text(
-                &string.repeat(area.width as usize * string.len()).to_string(),
+                &string
+                    .repeat(area.width as usize * string.len())
+                    .to_string(),
                 gradient.0.clone(),
                 gradient.1,
             );
@@ -1869,7 +1868,7 @@ impl tui_gradientblock {
         }
     }
 
-    /// Renders the `tui_gradientblock` widget, including optional fill and custom block rendering,
+    /// Renders the `TuiGradientblock` widget, including optional fill and custom block rendering,
     /// along with top and bottom titles.
     ///
     /// # Parameters:
@@ -1891,8 +1890,8 @@ impl tui_gradientblock {
         Self::render_bottom_titles(self, Rc::clone(&area_rc), buf);
     }
 }
-impl Widget for tui_gradientblock {
-    /// Renders the `tui_gradientblock` widget using the `main` function.
+impl Widget for TuiGradientblock {
+    /// Renders the `TuiGradientblock` widget using the `main` function.
     ///
     /// This is part of the `Widget` trait implementation. The `render` function takes an
     /// `area` and a mutable reference to the `Buffer`, and delegates rendering to the `main` function.
@@ -1903,7 +1902,7 @@ impl Widget for tui_gradientblock {
     ///
     /// # Example:
     /// ```
-    /// let widget = tui_gradientblock::new();
+    /// let widget = TuiGradientblock::new();
     /// let area = Rect::new(0, 0, 10, 10);
     /// let mut buffer = Buffer::new();
     /// widget.render(area, &mut buffer);
