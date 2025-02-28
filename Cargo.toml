@@ -1,0 +1,11 @@
+[package]
+name = "tui-gradient-block"
+authors = ["F-77777"]
+version = "0.1.0"
+edition = "2024"
+description = "an extension to ratatui's block widget with support for border gradients and a lot of different things that the ordinary block doesn't have, allowing for very visually appealing tuis."
+
+[dependencies]
+bitflags = "2.8.0"
+ratatui = "0.29.0"
+unicode-width = "0.2.0"
