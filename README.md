@@ -46,14 +46,13 @@ fn render_gradient_block(frame: &mut Frame) {
 
 ```
 ![](https://iili.io/3dxrRcX.png)
+## pre-defined gradient themes
+the shown gradient is rusty ruins, and each gradient theme has 14 (soon to be 16) variations
+![rusty ruins](https://iili.io/33DEVjI.gif)
 ## with multiple titles and border gradients
 [![3dEyuvj.gif](https://iili.io/3dEyuvj.gif)](https://freeimage.host/)
 
 ## multiple pre-defined misc types
 [![3dhR92I.md.png](https://iili.io/3dhR92I.md.png)](https://freeimage.host/i/3dhR92I)
-
-## pre-defined gradient themes
-the shown gradient is rusty ruins, and each gradient theme has 14 (soon to be 16) variations
-![rusty ruins](https://iili.io/33DEVjI.gif)
 
 please give me recommendations on pre-defined border themes and border styles
