@@ -19,7 +19,9 @@ complex border gradients may have a brief delay in rendering (no more than 300 m
 ```rust
 fn render_gradient_block(frame: &mut Frame) {
     let gradblock = tui_gradientblock::new(&frame.area(), SplitBorderSegments::NONE)
-    // Using Vec<GradientSegment, Gradient> works, but it may be tedious and make code unreadable. we (im the only one in this project) recommend using the generate_gradient_theme macro for simplicity
+    // Using Vec<GradientSegment, Gradient> works, but it may be tedious and make
+    // code unreadable. we (im the only one in this project) recommend using
+    // the generate_gradient_theme macro for simplicity
         .set_gradients(generate_gradient_theme!(
             BorderGradients {
                 left: vec![(48, 174, 209), (48, 174, 209)],
