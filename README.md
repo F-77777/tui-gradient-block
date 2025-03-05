@@ -1,7 +1,6 @@
 # tui-gradient-block
 
-### an extension to [ratatui](ratatui.rs)'s block widget with support for border gradients and a lot of different things that the ordinary block doesn't have, allowing for very visually appealing tuis.
-# Note:
+### an extension to [ratatui](ratatui.rs)'s block widget 
 
 this crate is in the experimental versions and some things may not work as expected  
 complex border gradients may have a brief delay in rendering (no more than 150 ms)
