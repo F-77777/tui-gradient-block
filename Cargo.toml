@@ -1,5 +1,5 @@
 [package]
-name = "tui-gradient-block"
+name = "tui_gradient_block"
 authors = ["F-77777"]
 version = "0.1.1"
 edition = "2024"
@@ -8,5 +8,25 @@ license = "MIT"
 
 [dependencies]
 bitflags = "2.8.0"
+color-eyre = "0.6.3"
+lazy_static = "1.5.0"
 ratatui = "0.29.0"
 unicode-width = "0.2.0"
+
+[[example]]
+name = "basic_gradient"
+path = "./examples/basic_gradient.rs"
+[[example]]
+name = "midnight_blurple"
+path = "./examples/themes/midnight_blurple.rs"
+# description = "a terminal theme inspired by discord's midnight blurple, featuring a sleek and modern look."
+
+[[example]]
+name = "rusty_ruins"
+path = "./examples/themes/rusty_ruins.rs"
+# description = "A warm, rustic theme with an aged aesthetic—because how could I forget a rusty theme?"
+
+[[example]]
+name = "misty_blue"
+path = "./examples/themes/misty_blue.rs"
+# description = "a soft, light blue theme. (should I have called it ice blue instead?)"
