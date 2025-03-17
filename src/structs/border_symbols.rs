@@ -1,4 +1,12 @@
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Hash)]
+use crate::types::E;
+#[derive(
+    Debug,
+    Clone,
+    serde::Serialize,
+    serde::Deserialize,
+    PartialEq,
+    Hash,
+)]
 /// A set of symbols that define the appearance of a border.  
 /// Most symbols are optional, allowing for customization of corners, edges, and intersections.
 pub struct BorderSymbolsSet {
@@ -96,7 +104,11 @@ pub struct BorderSymbolsSet {
 /// - `right_center`: The character used for the right center section of the border.
 /// - `left_center`: The character used for the left center section of the border.
 #[derive(
-    serde::Serialize, serde::Deserialize, Clone, Hash, PartialEq,
+    serde::Serialize,
+    serde::Deserialize,
+    Clone,
+    Hash,
+    PartialEq,
 )]
 pub struct BorderSymbolsSetMin {
     pub top_left: char,
@@ -113,15 +125,18 @@ pub struct BorderSymbolsSetMin {
     pub left_center: char,
 }
 impl BorderSymbolsSetMin {
-    pub fn from_json(path: &str) -> Self {
+    pub fn from_json(
+        path: &str,
+    ) -> Result<Self, E> {
         crate::generate_from_json!(path, Self)
     }
-    pub fn to_json(self) -> Result<String, std::io::Error> {
-    }
+    pub fn to_json(self) -> Result<String, E> {}
 }
 
 impl BorderSymbolsSet {
-    pub fn from_json(path: &str) -> Self {
+    pub fn from_json(
+        path: &str,
+    ) -> Result<Self, E> {
         crate::generate_from_json!(path, Self)
     }
     pub fn new() -> Self {

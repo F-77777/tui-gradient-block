@@ -2,10 +2,12 @@ pub struct BorderSegment {
     /// The text representation of this border segment.  
     /// - For a top border, this might be `"┌──────┐"`.  
     /// - For a right border, this might be `"┐││││┘"` (each character is rendered on a separate line from top to bottom, as newlines cannot be rendered directly).
-    pub segment_text: ratatui::text::Line<'static>,
+    pub segment_text:
+        ratatui::text::Line<'static>,
 
     /// An optional gradient applied to this border segment.  
-    pub gradient: Option<Box<dyn colorgrad::Gradient>>,
+    pub gradient:
+        Option<Box<dyn colorgrad::Gradient>>,
 
     /// Determines whether this segment should be rendered with a gradient.  
     /// If `false`, the gradient (if present) will be ignored.
@@ -45,26 +47,28 @@ impl BorderSegments {
     ///
     /// # Returns
     /// A `BorderSegments` instance with all segments initialized at their respective positions.
-    pub fn new(area: &ratatui::prelude::Rect) -> Self {
+    pub fn new(
+        area: &ratatui::prelude::Rect,
+    ) -> Self {
         Self {
             top_ln: BorderSegment::new(
-                area.left(),
+                area.left() + 1,
                 area.top(),
                 false,
             ),
             bottom_ln: BorderSegment::new(
-                area.left(),
+                area.left() + 1,
                 area.bottom() - 1,
                 false,
             ),
             left_ln: BorderSegment::new(
                 area.left(),
-                area.top(),
+                area.top() + 1,
                 true,
             ),
             right_ln: BorderSegment::new(
                 area.right() - 1,
-                area.top(),
+                area.top() + 1,
                 true,
             ),
         }
@@ -81,12 +85,18 @@ impl BorderSegment {
     ///
     /// # Returns
     /// A `BorderSegment` instance with default values.
-    pub fn new(x: u16, y: u16, is_vertical: bool) -> Self {
+    pub fn new(
+        x: u16,
+        y: u16,
+        is_vertical: bool,
+    ) -> Self {
         Self {
-            segment_text: ratatui::text::Line::raw(""),
+            segment_text:
+                ratatui::text::Line::raw(""),
             gradient: None,
             should_use_gradient: false,
             is_vertical,
+            should_be_rendered: true,
             x,
             y,
         }

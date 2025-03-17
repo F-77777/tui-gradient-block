@@ -1,14 +1,22 @@
-use crate::types::G;
 pub use crate::{
-    buffer, check_gradient, enums, generate_gradient_text,
-    get_aligned_position, handle_fill, handle_line_logic,
-    handle_title_logic,
+    border::*,
+    border_styles::*,
+    buffer, check_gradient, enums,
+    generate_gradient_text, get_aligned_position,
+    get_parsed_symbol, get_symbol, handle_fill,
+    handle_line_logic, handle_title_logic,
     prelude::{self, Widget},
-    set_line, set_vertical_line, structs, text,
-    text::Line,
+    set_line, set_vertical_line,
+    structs::{
+        self, border_segment, border_symbols,
+        gradient,
+    },
+    text::{self, Line},
+    types::G,
     widgets::{
         self,
-        block::{Position, Title as T},
+        block::{self, title::Position},
+        Block, Borders, Paragraph,
     },
 };
 use std::rc::Rc;
@@ -16,97 +24,54 @@ use std::rc::Rc;
 ///
 /// This struct allows you to create and manage blocks that have a gradient color effect for text,
 /// customizable borders, and areas with specific alignments and fill styles.
-///
-/// # Fields
-/// - `bordertype`: Specifies the type of border style used for the block.
-/// - `fill`: Defines the fill style for the block's area (e.g., solid or gradient).
-/// - `top_titles`: A vector of tuples where each tuple contains:
-///   - A `String` representing the title text.
-///   - A `Alignment` indicating the alignment of the title.
-///   - An optional tuple of gradient colors (represented as a vector of `(u8, u8, u8)` tuples) and
-///     a factor that controls the spread of the gradient effect.
-/// - `bottom_titles`: A similar vector to `top_titles`, but for titles placed at the bottom of the block.
-/// - `border_symbols`: Defines the symbols used for the block's borders.
-/// - `border_segments`: Defines the segments of the block's border.
-/// - `split_segments`: Specifies how the block's border is split into different sections.
-/// - `area`: A `Rect` representing the block's area, typically used for positioning and layout.
-///
-/// # Example
-/// ```rust
-/// let gradient_block = GradientBlock {
-///     bordertype: BorderStyle::Solid,
-///     fill: Fill::SolidColor((255, 0, 0)),
-///     top_titles: vec![("Top Title".to_owned(), Alignment::Center, None)],
-///     bottom_titles: vec![("Bottom Title".to_owned(), Alignment::Right, None)],
-///     border_symbols: BorderSymbols::Default,
-///     border_segments: BorderSegments::Full,
-///     split_segments: SplitBorderSegments::None,
-///     area: Rect::new(0, 0, 10, 5),
-/// };
-/// ```
-
-pub struct GradientBlock {
+pub struct GradientBlock<'a> {
     pub border_type: enums::BorderStyle,
-    pub fill: structs::Fill,
-    pub top_titles: Vec<widgets::block::Title<'static>>,
-    pub bottom_titles: Vec<widgets::block::Title<'static>>,
-    pub border_symbols: structs::BorderSymbols,
-    pub border_segments: structs::BorderSegments,
+    pub fill: Line<'a>,
+    pub titles: Vec<(Line<'a>, Position)>,
+    pub border_symbols:
+        border_symbols::BorderSymbolsSet,
+    pub border_segments:
+        border_segment::BorderSegments,
     pub area: prelude::Rect,
 }
 
-impl GradientBlock {
+impl<'a> GradientBlock<'a> {
     pub fn new(area: &prelude::Rect) -> Self {
         Self {
             border_type: enums::BorderStyle::Plain,
-            fill: structs::Fill::new(),
-            top_titles: Vec::new(),
-            bottom_titles: Vec::new(),
-            border_symbols: structs::BorderSymbols::new(),
-            border_segments: structs::BorderSegments::new(area),
+            fill: Line::raw(""),
+            titles: Vec::new(),
+            border_symbols: border_symbols::BorderSymbolsSet::new(),
+            border_segments: border_segment::BorderSegments::new(
+                area,
+            ),
             area: *area,
         }
     }
 
-    /// Creates a gradient effect on a given text by interpolating between a list of colors
-    /// based on the position of each character in the string.
-    ///
-    /// # Parameters
-    /// - `text`: A reference to the input `String` for which the gradient effect will be applied.
-    /// - `gradient` A reference to the Gradient struct
-    ///
-    /// # Returns
-    /// A `Vec<Span<'static>>` containing `Span` elements, where each `Span` represents a styled portion
-    /// of the input text with the corresponding color from the gradient.
-    /// # Example:
-    /// ```rust
-    /// let text = "Hello, World!".to_string();
-    /// let colors = vec![(255, 0, 0), (0, 255, 0), (0, 0, 255)];
-    /// let factor = 1.0;
-    /// let gradient_text = create_gradient_text(&text, &colors, &factor);
-    /// ```
-    /// In the above example, the `gradient_text` will be a vector of `Span`s with the text "Hello, World!"
-    /// styled with a gradient transitioning from red to green to blue.
-    /// # Note
-    /// - The `interpolate_color` function is used internally to calculate the intermediate colors based on the
-    ///   position of the character relative to the total width of the text.
-    pub fn create_gradient_text(
-        text: &str,
+    pub fn create_gradient_text<
+        L: Into<Line<'a>>,
+    >(
+        text: L,
         gradient: &G,
-    ) -> Vec<prelude::Span<'static>> {
-        let mut gradient_text = Vec::with_capacity(text.len());
-        for (c, color) in text.chars().zip(gradient.colors(text.len())) {
-            gradient_text.push(prelude::Span::styled(
-                String::from(c),
-                prelude::Style::default().fg(prelude::Color::Rgb(
+    ) -> Vec<prelude::Span<'_>> {
+        let text = text.into();
+        let mut gradient_text =
+            Vec::with_capacity(text.width());
+        for (c, color) in text.spans().zip(
+            gradient.colors(text.width()).iter(),
+        ) {
+            gradient_text.push(c.fg(
+                prelude::Color::Rgb(
                     (color.r * 255.0) as u8,
                     (color.g * 255.0) as u8,
                     (color.b * 255.0) as u8,
-                )),
+                ),
             ));
         }
         gradient_text
     }
+
     /// Sets the border line segments based on the area and border symbols.
     /// This method configures the border segments (top, bottom, left, right) and any possible splits
     /// **Important:**
@@ -118,19 +83,26 @@ impl GradientBlock {
     /// - It uses the provided `border_symbols` to determine the characters used for the borders.
     /// # Returns
     /// - A modified instance of the struct (self), with the border segments set according to the configurations.
-    pub fn set_lines(self) -> Self {
-        Self::set_lns(self)
-    }
     /// Renders the border segments of the block.
     ///
-    /// This private function renders the top, left, right and bottom lines
-    fn render_block(&self, buf: &mut buffer::Buffer) {
-        Self::render_left_ln(&self, buf);
-        Self::render_right_ln(&self, buf);
-        Self::render_top_ln(&self, buf);
-        Self::render_bottom_ln(&self, buf);
+    /// This private function renders the block's borders
+    fn render_block(
+        &self,
+        buf: &mut buffer::Buffer,
+    ) {
+        if self.left_ln.should_be_rendered {
+            Self::render_left_ln(self, buf);
+        }
+        if self.right_ln.should_be_rendered {
+            Self::render_right_ln(self, buf);
+        }
+        if self.top_ln.should_be_rendered {
+            Self::render_top_ln(self, buf);
+        }
+        if self.bottom_ln.should_be_rendered {
+            Self::render_bottom_ln(self, buf);
+        }
     }
-
     /// Renders the top horizontal line of the border with an optional gradient.
     ///
     /// This function renders the top border line. If the `top_ln` segment should use a gradient,
@@ -146,8 +118,14 @@ impl GradientBlock {
     /// |     |
     /// +-----+
     /// ```
-    fn render_top_ln(&self, buf: &mut buffer::Buffer) {
-        handle_line_logic!(self.border_segments.top_ln, buf);
+    fn render_top_ln(
+        &self,
+        buf: &mut buffer::Buffer,
+    ) {
+        handle_line_logic!(
+            self.border_segments.top_ln,
+            buf
+        );
     }
 
     /// Renders the left vertical line of the border with an optional gradient.
@@ -160,13 +138,20 @@ impl GradientBlock {
     /// +-----+
     ///       |
     ///       |
+    ///       |
     ///       +
     ///       |
     ///       |
     /// +-----+
     /// ```
-    fn render_left_ln(&self, buf: &mut buffer::Buffer) {
-        handle_line_logic!(self.border_segments.left_ln, buf);
+    fn render_left_ln(
+        &self,
+        buf: &mut buffer::Buffer,
+    ) {
+        handle_line_logic!(
+            self.border_segments.left_ln,
+            buf
+        );
     }
 
     /// Renders the bottom horizontal line of the border with an optional gradient.
@@ -184,8 +169,14 @@ impl GradientBlock {
     /// |     |
     /// +     +
     /// ````
-    fn render_bottom_ln(&self, buf: &mut buffer::Buffer) {
-        handle_line_logic!(&self.border_segments.bottom_ln, buf);
+    fn render_bottom_ln(
+        &self,
+        buf: &mut buffer::Buffer,
+    ) {
+        handle_line_logic!(
+            &self.border_segments.bottom_ln,
+            buf
+        );
     }
 
     /// Renders the right vertical line of the border with an optional gradient.
@@ -207,8 +198,14 @@ impl GradientBlock {
     /// |     
     /// +--+--+
     /// ```
-    fn render_right_ln(&self, buf: &mut buffer::Buffer) {
-        handle_line_logic!(&self.border_segments.right_ln, buf);
+    fn render_right_ln(
+        &self,
+        buf: &mut buffer::Buffer,
+    ) {
+        handle_line_logic!(
+            &self.border_segments.right_ln,
+            buf
+        );
     }
 
     /// Renders the itles for the widget, with an optional gradient
@@ -217,7 +214,11 @@ impl GradientBlock {
         area: Rc<prelude::Rect>,
         buf: &mut buffer::Buffer,
     ) {
-        handle_title_logic!(&self.top_titles, *area, buf);
+        handle_title_logic!(
+            &self.titles,
+            *area,
+            buf
+        );
     }
 
     /// Renders the fill for the widget, including optional gradient rendering.
@@ -226,42 +227,296 @@ impl GradientBlock {
         area: Rc<prelude::Rect>,
         buf: &mut buffer::Buffer,
     ) {
-        handle_fill!(
-            self.fill,
-            self.fill.fill_string.as_deref().unwrap_or(""),
-            *area,
-            buf,
-            (area.height * area.width) as usize
-        );
+        handle_fill!(self.fill, *area, buf);
     }
 
     /// Renders the `Gradientblock` widget, including optional fill and custom block rendering,
-    /// along with top and bottom titles.
-    ///
-    /// # Parameters:
-    /// - `area`: A reference to a `Rect` that specifies the area to render the widget in.
-    /// - `buf`: A mutable reference to the `Buffer` where the rendered output will be stored.
-    ///
-    /// This function:
-    /// - Checks if there is a fill string and calls `render_fill` if present.
-    /// - Renders the custom block using `render_custom_block`.
-    /// - Renders the top titles using `render_top_titles`.
-    /// - Renders the bottom titles using `render_bottom_titles`.
+    /// along with titles.
     pub fn main(
         &self,
         area: &prelude::Rect,
         buf: &mut buffer::Buffer,
     ) {
         let area_rc = Rc::new(*area);
-        if self.fill.fill_string.is_some() {
-            Self::render_fill(self, Rc::clone(&area_rc), buf);
+        if self.fill.is_some() {
+            Self::render_fill(
+                self,
+                Rc::clone(&area_rc),
+                buf,
+            );
         }
         self.render_block(buf);
-        Self::render_top_titles(self, Rc::clone(&area_rc), buf);
-        Self::render_bottom_titles(self, Rc::clone(&area_rc), buf);
+        Self::render_titles(
+            self,
+            Rc::clone(&area_rc),
+            buf,
+        );
+    }
+    pub fn build(mut self) -> Self {
+        let border_symbols = &self.border_symbols;
+        let area = &self.area;
+        let top_horizontal = get_symbol!(
+            border_symbols.top_horizontal,
+            get_parsed_symbol!(
+                PLAIN.horizontal_top
+            )
+        );
+        let left_vertical = get_symbol!(
+            border_symbols.left_vertical,
+            get_parsed_symbol!(
+                PLAIN.vertical_left
+            )
+        );
+        let bottom_horizontal = get_symbol!(
+            border_symbols.bottom_horizontal,
+            get_parsed_symbol!(
+                PLAIN.horizontal_top
+            )
+        );
+        let right_vertical = get_symbol!(
+            border_symbols.right_vertical,
+            get_parsed_symbol!(
+                PLAIN.vertical_right
+            )
+        );
+
+        let top_center_char = get_symbol!(
+            border_symbols.top_center,
+            top_horizontal
+        );
+        let bottom_center_char = get_symbol!(
+            border_symbols.bottom_center,
+            bottom_horizontal
+        );
+        let left_center_char = get_symbol!(
+            border_symbols.left_center,
+            left_vertical
+        );
+        let right_center_char = get_symbol!(
+            border_symbols.right_center,
+            right_vertical
+        );
+
+        let top_right = get_symbol!(
+            border_symbols.top_right,
+            get_parsed_symbol!(PLAIN.top_right)
+        );
+        let top_left = get_symbol!(
+            border_symbols.top_left,
+            get_parsed_symbol!(PLAIN.top_left)
+        );
+        let bottom_right = get_symbol!(
+            border_symbols.bottom_right,
+            get_parsed_symbol!(
+                PLAIN.bottom_right
+            )
+        );
+        let bottom_left = get_symbol!(
+            border_symbols.bottom_left,
+            get_parsed_symbol!(PLAIN.bottom_left)
+        );
+
+        let top_horizontal_right = get_symbol!(
+            border_symbols.top_horizontal_right,
+            top_horizontal
+        );
+        let bottom_horizontal_right = get_symbol!(
+            border_symbols
+                .bottom_horizontal_right,
+            bottom_horizontal
+        );
+        let top_horizontal_left = get_symbol!(
+            border_symbols.top_horizontal_left,
+            top_horizontal
+        );
+        let bottom_horizontal_left = get_symbol!(
+            border_symbols.bottom_horizontal_left,
+            bottom_horizontal
+        );
+
+        let top_vertical_right = get_symbol!(
+            border_symbols.top_vertical_right,
+            right_vertical
+        );
+        let bottom_vertical_right = get_symbol!(
+            border_symbols.bottom_vertical_right,
+            right_vertical
+        );
+        let top_vertical_left = get_symbol!(
+            border_symbols.top_vertical_left,
+            left_vertical
+        );
+        let bottom_vertical_left = get_symbol!(
+            border_symbols.bottom_vertical_left,
+            left_vertical
+        );
+
+        let top_hor_left_rep =
+            ((area.width.saturating_sub(1)
+                as usize)
+                / 2)
+            .saturating_sub(1);
+        let top_hor_right_rep =
+            ((area.width.saturating_sub(1)
+                as usize)
+                / 2)
+            .saturating_sub(2);
+        let bottom_hor_left_rep =
+            ((area.width as usize + 1) / 2)
+                .saturating_sub(1);
+        let bottom_hor_right_rep =
+            (area.width as usize / 2)
+                .saturating_sub(2);
+
+        let top_vert_left_rep =
+            ((area.height as usize + 1) / 2)
+                .saturating_sub(2);
+        let bottom_vert_left_rep =
+            (area.height as usize / 2)
+                .saturating_sub(1);
+        let top_ln = create_segment!(
+            top_left,
+            top_horizontal_left,
+            top_hor_left_rep,
+            top_center_char,
+            top_horizontal_right,
+            top_hor_right_rep,
+            top_right,
+            self.border_segments.top_ln.gradient
+        );
+        let bottom_ln = create_segment!(
+            bottom_left,
+            bottom_horizontal_left,
+            bottom_hor_left_rep,
+            bottom_center_char,
+            bottom_horizontal_right,
+            bottom_hor_right_rep,
+            bottom_right,
+            self.border_segments
+                .bottom_ln
+                .gradient
+        );
+        let left_ln = create_segment!(
+            top_left,
+            top_vertical_left,
+            top_vert_left_rep,
+            left_center_char,
+            bottom_vertical_left,
+            bottom_vert_left_rep,
+            bottom_left,
+            self.border_segments.left_ln.gradient
+        );
+        let right_ln = create_segment!(
+            top_right,
+            top_vertical_right,
+            top_vert_left_rep,
+            right_center_char,
+            bottom_vertical_right,
+            bottom_vert_left_rep,
+            bottom_right,
+            self.border_segments
+                .right_ln
+                .gradient
+        );
+        self.border_segments
+            .top_ln
+            .segment_text = top_ln;
+        self.border_segments
+            .right_ln
+            .segment_text = right_ln;
+        self.border_segments
+            .left_ln
+            .segment_text = left_ln;
+        self.border_segments
+            .bottom_ln
+            .segment_text = bottom_ln;
+        self
+    }
+    pub fn set_border_style(
+        mut self,
+        style: enums::BorderStyle,
+    ) -> Self {
+        match style {
+            enums::BorderStyle::CustomBorderType(t) => {
+                self.border_symbols =
+                crate::structs::border_symbols::BorderSymbolsSet {
+                    top_left: Some(t.top_left),
+                    bottom_left: Some(t.bottom_left),
+                    top_right: Some(t.top_right),
+                    bottom_right: Some(t.bottom_right),
+                    top_horizontal: Some(t.top),
+                    bottom_horizontal: Some(t.bottom),
+                    left_vertical: Some(t.left),
+                    right_vertical: Some(t.right),
+                    bottom_center: Some(t.bottom_center),
+                    top_center: Some(t.top_center),
+                    right_center: Some(t.right_center),
+                    left_center: Some(t.left_center),
+
+                    top_horizontal_right: Some(t.top),
+                    bottom_horizontal_right: Some(t.bottom),
+                    top_horizontal_left: Some(t.top),
+                    bottom_horizontal_left: Some(t.bottom),
+
+                    top_vertical_right: Some(t.right),
+                    bottom_vertical_right: Some(t.right),
+                    top_vertical_left: Some(t.top_left),
+                    bottom_vertical_left: Some(t.left),
+                };
+            }
+            enums::BorderStyle::CustomBorderTypeFull(t) => {
+                self.border_symbols = t;
+            }
+            enums::BorderStyle::MiscBorder(t) => {
+                let miscborder = match t {
+                    enums::MiscBorderTypes::Misc1 => MISC1,
+                    enums::MiscBorderTypes::Misc2 => MISC2,
+                    enums::MiscBorderTypes::Misc3 => MISC3,
+                    enums::MiscBorderTypes::Misc4 => MISC4,
+                };
+                self.border_symbols = t;
+            }
+            regborder => {
+                let reg: ratatui::symbols::border::Set =
+                    match regborder {
+                        enums::BorderStyle::Plain => PLAIN,
+                        enums::BorderStyle::Double => DOUBLE,
+                        enums::BorderStyle::Thick => THICK,
+                        enums::BorderStyle::Rounded => ROUNDED,
+                        _ => PLAIN,
+                    };
+                self.border_symbols.top_left =
+                    Some(get_parsed_symbol!(reg.top_left));
+                self.border_symbols.bottom_left =
+                    Some(get_parsed_symbol!(reg.bottom_left));
+                self.border_symbols.top_right =
+                    Some(get_parsed_symbol!(reg.top_right));
+                self.border_symbols.bottom_right =
+                    Some(get_parsed_symbol!(reg.bottom_right));
+                self.border_symbols.top_horizontal =
+                    Some(get_parsed_symbol!(reg.horizontal_top));
+                self.border_symbols.bottom_horizontal =
+                    Some(get_parsed_symbol!(reg.horizontal_bottom));
+                self.border_symbols.left_vertical =
+                    Some(get_parsed_symbol!(reg.vertical_left));
+                self.border_symbols.right_vertical =
+                    Some(get_parsed_symbol!(reg.vertical_right));
+                self.border_symbols.bottom_center =
+                    Some(get_parsed_symbol!(reg.horizontal_bottom));
+                self.border_symbols.top_center =
+                    Some(get_parsed_symbol!(reg.horizontal_top));
+                self.border_symbols.right_center =
+                    Some(get_parsed_symbol!(reg.vertical_right));
+                self.border_symbols.left_center =
+                    Some(get_parsed_symbol!(reg.vertical_left));
+            }
+        };
+        self.border_type = style;
+        self
     }
 }
-impl widgets::Widget for GradientBlock {
+
+impl widgets::Widget for GradientBlock<'_> {
     /// Renders the `Gradientblock` widget using the `main` function.
     ///
     /// This is part of the `Widget` trait implementation. The `render` function takes an
@@ -270,7 +525,11 @@ impl widgets::Widget for GradientBlock {
     /// # Parameters:
     /// - `area`: A `Rect` that defines the area for rendering the widget.
     /// - `buf`: A mutable reference to the `Buffer` where the rendered output will be stored.
-    fn render(self, area: prelude::Rect, buf: &mut buffer::Buffer) {
+    fn render(
+        self,
+        area: prelude::Rect,
+        buf: &mut buffer::Buffer,
+    ) {
         self.main(&area, buf);
     }
 }

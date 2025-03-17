@@ -11,10 +11,12 @@ macro_rules! get_parsed_symbol {
     };
 }
 #[macro_export]
-/// Macro for generating line segments
+/// Macro for generating border segments
 macro_rules! create_segment {
     ($start:expr, $middle1:expr, $repeat1:expr, $middle2:expr, $middle3:expr, $repeat2:expr, $end:expr, $gradient:expr) => {{
-        let mut s = String::with_capacity(4 + $repeat1 + $repeat2);
+        let mut s = String::with_capacity(
+            4 + $repeat1 + $repeat2,
+        );
         s.push($start);
         for _ in 0..$repeat1 {
             s.push($middle1);
@@ -25,8 +27,7 @@ macro_rules! create_segment {
         }
         s.push($end);
         Line::from(Self::create_gradient_text(
-            &s,
-            &$gradient,
+            &s, &$gradient,
         ))
     }};
 }
@@ -34,13 +35,18 @@ macro_rules! create_segment {
 #[macro_export]
 macro_rules! generate_gradient_text {
     ($ln:expr) => {
-        crate::gradient_block::GradientBlock::create_gradient_text(
-            $ln.segment_text.as_str(),
-            &$ln.gradient.clone().unwrap(),
-        )
+        if let Some(boxed) = &$ln.gradient {
+            let seg_text = Rc::new(&$ln.segment_text);
+
+        $crate::gradient_block::GradientBlock::create_gradient_text(
+            *&$ln.segment_text,
+            boxed,
+        )} else {
+            Vec::new()
+        }
     };
     ($text:expr, $gradient:expr) => {
-        crate::gradient_block::GradientBlock::create_gradient_text(
+        $crate::gradient_block::GradientBlock::create_gradient_text(
             $text, &$gradient,
         )
     };
@@ -50,11 +56,9 @@ macro_rules! check_gradient {
     ($ln:expr) => {
         match $ln.should_use_gradient {
             true => generate_gradient_text!($ln),
-            false => $ln
-                .segment_text
-                .chars()
-                .map(|i| prelude::Span::raw(String::from(i)))
-                .collect(),
+            false => {
+                $ln.segment_text.spans.clone()
+            }
         }
     };
 }
@@ -65,15 +69,22 @@ macro_rules! set_line {
             $ln.x,
             $ln.y,
             $used_ln,
-            $ln.segment_text.len() as u16 * 2,
+            $ln.segment_text.width() as u16,
         );
     };
 }
 #[macro_export]
 macro_rules! set_vertical_line {
     ($ln:expr, $used_ln:expr, $buf:expr) => {
-        for (i, span) in $used_ln.iter().enumerate() {
-            $buf.set_span($ln.x, $ln.y + i as u16, span, 1);
+        for (i, span) in
+            $used_ln.iter().enumerate()
+        {
+            $buf.set_span(
+                $ln.x,
+                $ln.y + i as u16,
+                span,
+                1,
+            );
         }
     };
 }
@@ -83,9 +94,15 @@ macro_rules! handle_line_logic {
     ($ln:expr, $buf:expr) => {
         let used_ln = check_gradient!($ln);
         if $ln.is_vertical {
-            set_vertical_line!($ln, used_ln, $buf);
+            set_vertical_line!(
+                $ln, used_ln, $buf
+            );
         } else {
-            set_line!($ln, &Line::from(used_ln), $buf);
+            set_line!(
+                $ln,
+                &Line::from(used_ln),
+                $buf
+            );
         }
     };
 }
@@ -93,57 +110,55 @@ macro_rules! handle_line_logic {
 macro_rules! get_aligned_position {
     ($area:expr, $alignment:expr, $text_len:expr) => {
         match $alignment {
-            Some(prelude::Alignment::Left) => $area.left() + 1,
-            Some(prelude::Alignment::Right) => {
-                ($area.right() - 1).saturating_sub($text_len)
+            Some(prelude::Alignment::Left) => {
+                $area.left()
             }
-            Some(prelude::Alignment::Center) => ($area.left()
-                + ($area.width / 2))
-                .saturating_sub($text_len / 2),
-            None => $area.left() + 1,
+            Some(prelude::Alignment::Right) => {
+                ($area.right())
+                    .saturating_sub($text_len)
+            }
+            Some(prelude::Alignment::Center) => {
+                ($area.left() + ($area.width / 2))
+                    .saturating_sub($text_len / 2)
+            }
+            None => $area.left(),
         }
     };
 }
 #[macro_export]
 macro_rules! handle_title_logic {
     ($titles:expr, $area:expr, $buf:expr) => {
-        for title in $titles {
+        for (title, pos) in $titles {
             let x = get_aligned_position!(
                 $area,
                 title.alignment,
-                title.content.width() as u16
+                title.spans.len() as u16 + 1
             );
-            let y = match title.position {
-                Some(Position::Top) => $area.top(),
-                Some(Position::Bottom) => $area.bottom() - 1,
-                None => $area.top(),
+            let y = match pos {
+                Position::Top => $area.top(),
+
+                Position::Bottom => {
+                    $area.bottom()
+                }
             };
+
             $buf.set_line(
                 x,
                 y,
-                &title.content,
-                title.content.width() as u16,
+                &title,
+                title.spans.len() as u16 + 1,
             );
         }
     };
 }
 #[macro_export]
 macro_rules! handle_fill {
-    ($fill:expr, $fill_string:expr, $area:expr, $buf:expr, $rep:expr) => {
-        let fillvec = match &$fill.gradient {
-            Some(gradient) => {
-                generate_gradient_text!(&$fill_string, &gradient)
-            }
-            None => $fill_string
-                .chars()
-                .map(|i| prelude::Span::raw(i.to_string()))
-                .collect(),
-        };
-        widgets::Paragraph::new(Line::from(fillvec))
+    ($fill:expr, $area:expr, $buf:expr) => {
+        Paragraph::new($fill)
             .wrap(widgets::Wrap { trim: true })
             .block(
-                widgets::Block::default()
-                    .borders(widgets::Borders::ALL),
+                Block::default()
+                    .borders(Borders::ALL),
             )
             .render($area, $buf);
     };
@@ -158,10 +173,17 @@ macro_rules! render_example_blocks {
         {
             $f.render_widget(
                 GradientBlock::new(area)
-                    .top_titles(vec![title])
+                    .title(title)
                     .border_style($style)
-                    .set_gradients(theme.to_vec())
-                    .set_lines(),
+                    .set_right_ln_gradient(
+                        theme.right,
+                    )
+                    .left_ln_gradient(theme.left)
+                    .top_ln_gradient(theme.top)
+                    .bottom_ln_gradient(
+                        theme.bottom,
+                    )
+                    .build(),
                 *area,
             );
         }
@@ -170,17 +192,24 @@ macro_rules! render_example_blocks {
 #[macro_export]
 macro_rules! get_transformed_int {
     ($item:expr, $f:expr, $times:expr) => {
-        (($item as f32 * ($f as f32).powi($times as i32)).floor()
-            as u8)
+        (($item as f32
+            * ($f as f32).powi($times as i32))
+        .floor() as u8)
     };
 }
 #[macro_export]
 macro_rules! get_transformed_rgb {
     ($list:expr, $f:expr, $times:expr) => {
         (
-            get_transformed_int!($list.0, $f, $times),
-            get_transformed_int!($list.1, $f, $times),
-            get_transformed_int!($list.2, $f, $times),
+            get_transformed_int!(
+                $list.0, $f, $times
+            ),
+            get_transformed_int!(
+                $list.1, $f, $times
+            ),
+            get_transformed_int!(
+                $list.2, $f, $times
+            ),
         )
     };
 }
@@ -277,8 +306,12 @@ macro_rules! gen_main {
             style = handle_args!();
             let _ = color_eyre::install();
             let mut terminal = ratatui::init();
-            let app_result =
-                run(&mut terminal, style, $theme_list, $title_list);
+            let app_result = run(
+                &mut terminal,
+                style,
+                $theme_list,
+                $title_list,
+            );
             ratatui::restore();
             app_result
         }
@@ -342,7 +375,8 @@ macro_rules! gen_other_functions {
 macro_rules! gen_example_code {
     ($theme_list:expr, $title_list:expr) => {
         use tui_gradient_block::{
-            gen_main, gen_other_functions, gen_use, generate_run,
+            gen_main, gen_other_functions,
+            gen_use, generate_run,
         };
         gen_use!();
         gen_other_functions!();
@@ -559,12 +593,12 @@ macro_rules! simple_title {
 macro_rules! generate_theme_use {
     () => {
         pub use crate::{
-            gen_titles, generate_gradient_text, gradient_block,
+            gen_titles, generate_gradient_text,
+            gradient_block,
         };
         use ratatui::{
-            prelude,
-            text::Line,
-            widgets::block::{Title as T, title::Position as P},
+            prelude, text::Line,
+            widgets::block::title::Position as P,
         };
         use std::sync::Mutex;
     };
@@ -574,13 +608,16 @@ macro_rules! generate_from_json {
     ($path:expr, $returntype:ty) => {{
         let f = std::fs::File::open($path)?;
         let gradient: $returntype =
-            serde_json::from_reader(std::io::BufReader::new(f))?;
-        gradient
+            serde_json::from_reader(
+                std::io::BufReader::new(f),
+            )?;
+        Ok(gradient)
     }};
 }
-#[macro_export] 
+#[macro_export]
 macro_rules! generate_to_json {
     ($val:expr) => {
-        serde_json::to_string_pretty(&$val).unwrap()
+        serde_json::to_string_pretty(&$val)
+            .unwrap()
     };
 }

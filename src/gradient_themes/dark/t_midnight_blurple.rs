@@ -5,8 +5,13 @@ pub const COLOR_2: C = C::new(75, 51, 183, 1);
 pub const COLOR_3: C = C::new(138, 73, 252, 1);
 pub const COLOR_4: C = C::new(145, 82, 255, 1);
 
-pub static TITLES: Lazy<Mutex<structs::TitleSet>> =
-    Lazy::new(|| Mutex::new(gen_titles!(COLOR_2, COLOR_3, COLOR_4)));
+pub static TITLES: Lazy<
+    Mutex<structs::TitleSet>,
+> = Lazy::new(|| {
+    Mutex::new(gen_titles!(
+        COLOR_2, COLOR_3, COLOR_4
+    ))
+});
 
 pub const D_TO_L: GRef = GRef {
     colors: &[COLOR_1, COLOR_2],
@@ -53,7 +58,9 @@ pub const DOUBLE_RIGHT: GVRef = GVRef {
         gradient_color_count: None,
     },
     left: GRef {
-        colors: &[COLOR_1, COLOR_2, COLOR_2, COLOR_4],
+        colors: &[
+            COLOR_1, COLOR_2, COLOR_2, COLOR_4,
+        ],
         gradient_type: GType::Linear,
         gradient_color_count: None,
     },
@@ -63,7 +70,9 @@ pub const DOUBLE_RIGHT: GVRef = GVRef {
         gradient_color_count: None,
     },
     right: GRef {
-        colors: &[COLOR_4, COLOR_2, COLOR_1, COLOR_1],
+        colors: &[
+            COLOR_4, COLOR_2, COLOR_1, COLOR_1,
+        ],
         gradient_type: GType::Linear,
         gradient_color_count: None,
     },
@@ -166,12 +175,18 @@ pub const RIGHT: GVRef = GVRef {
 
 pub const BASE1: GVRef = GVRef {
     top: GRef {
-        colors: &[COLOR_4, COLOR_2, COLOR_2, COLOR_2, COLOR_4],
+        colors: &[
+            COLOR_4, COLOR_2, COLOR_2, COLOR_2,
+            COLOR_4,
+        ],
         gradient_type: GType::Linear,
         gradient_color_count: None,
     },
     left: GRef {
-        colors: &[COLOR_4, COLOR_2, COLOR_2, COLOR_4, COLOR_2],
+        colors: &[
+            COLOR_4, COLOR_2, COLOR_2, COLOR_4,
+            COLOR_2,
+        ],
         gradient_type: GType::Linear,
         gradient_color_count: None,
     },
@@ -189,7 +204,9 @@ pub const BASE1: GVRef = GVRef {
 
 pub const BASE2: GVRef = GVRef {
     top: GRef {
-        colors: &[COLOR_4, COLOR_2, COLOR_2, COLOR_2],
+        colors: &[
+            COLOR_4, COLOR_2, COLOR_2, COLOR_2,
+        ],
         gradient_type: GType::Linear,
         gradient_color_count: None,
     },
@@ -204,7 +221,9 @@ pub const BASE2: GVRef = GVRef {
         gradient_color_count: None,
     },
     right: GRef {
-        colors: &[COLOR_2, COLOR_3, COLOR_2, COLOR_4],
+        colors: &[
+            COLOR_2, COLOR_3, COLOR_2, COLOR_4,
+        ],
         gradient_type: GType::Linear,
         gradient_color_count: None,
     },

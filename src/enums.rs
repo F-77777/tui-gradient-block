@@ -48,9 +48,12 @@ pub enum BorderStyle {
     /// A rounded border with smooth corners (e.g., `╭╮╰╯`).
     Rounded,
     /// a custom user-defined border type that can be serialized and deserialized
+    /// uses the minimal set of symbols 
     CustomBorderType(
         crate::structs::border_symbols::BorderSymbolsSetMin,
     ),
+    /// a custom user-defined border type that can be serialized and deserialized  
+    /// uses the full set of symbols for increased customizability
     CustomBorderTypeFull(
         crate::structs::border_symbols::BorderSymbolsSet,
     ),
@@ -72,7 +75,14 @@ pub enum BorderStyleArgs {
     /// A rounded border with smooth corners (e.g., `╭╮╰╯`).
     Rounded,
 }
-#[derive(Debug, Clone, PartialEq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Hash,
+    serde::Serialize,
+    serde::Deserialize,
+)]
 pub enum GradientType {
     Linear,
     CatmullRom,

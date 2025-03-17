@@ -1,13 +1,19 @@
 use crate::{enums::GradientType, types::G};
 pub struct GradientTheme {
     pub top_left: DeserializableGradientVariation,
-    pub top_right: DeserializableGradientVariation,
-    pub bottom_left: DeserializableGradientVariation,
-    pub bottom_right: DeserializableGradientVariation,
-    pub double_right: DeserializableGradientVariation,
-    pub double_left: DeserializableGradientVariation,
+    pub top_right:
+        DeserializableGradientVariation,
+    pub bottom_left:
+        DeserializableGradientVariation,
+    pub bottom_right:
+        DeserializableGradientVariation,
+    pub double_right:
+        DeserializableGradientVariation,
+    pub double_left:
+        DeserializableGradientVariation,
     pub vertical: DeserializableGradientVariation,
-    pub horizontal: DeserializableGradientVariation,
+    pub horizontal:
+        DeserializableGradientVariation,
     pub up: DeserializableGradientVariation,
     pub down: DeserializableGradientVariation,
     pub left: DeserializableGradientVariation,
@@ -16,8 +22,15 @@ pub struct GradientTheme {
     pub base2: DeserializableGradientVariation,
 }
 /// the struct for gradient variations
-/// using them needs deserialization of the struct 
-#[derive(Clone, Debug, PartialEq, Hash, serde::Serialize, serde::Deserialize)]
+/// using them needs deserialization of the struct
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+    Hash,
+    serde::Serialize,
+    serde::Deserialize,
+)]
 pub struct DeserializableGradientVariation {
     left: &'static str,
     right: &'static str,
@@ -30,7 +43,12 @@ pub struct GradientVariation {
     bottom: G,
     top: G,
 }
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(
+    Debug,
+    serde::Serialize,
+    serde::Deserialize,
+    Clone,
+)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
@@ -42,19 +60,24 @@ pub struct Gradient<'a> {
     pub gradient_type: GradientType,
     pub gradient_color_count: Option<usize>,
 }
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq)]
+#[derive(
+    serde::Serialize,
+    serde::Deserialize,
+    Clone,
+    PartialEq,
+)]
 pub struct OwnedGradient {
     pub colors: Vec<colorgrad::Color>,
     pub gradient_type: GradientType,
     pub gradient_color_count: Option<usize>,
-
 }
 impl Gradient<'_> {
     pub fn to_owned(self) -> OwnedGradient {
         OwnedGradient {
             colors: self.colors.to_vec(),
             gradient_type: self.gradient_type,
-            gradient_color_count: self.gradient_color_count,
+            gradient_color_count: self
+                .gradient_color_count,
         }
     }
 }
@@ -72,8 +95,9 @@ impl DeserializableGradientVariation {
             top,
         }
     }
-    pub fn to_gradient_variation(&self) -> GradientVariation {
-
+    pub fn to_gradient_variation(
+        &self,
+    ) -> GradientVariation {
         macro_rules! to_gradient {
             ($gradient:expr, $gtype:ty) => {
                 Box::new(
@@ -96,10 +120,18 @@ impl DeserializableGradientVariation {
                 }
             };
         }
-        let right: OwnedGradient = serde_json::from_str(self.right).unwrap();
-        let left: OwnedGradient = serde_json::from_str(self.left).unwrap();
-        let bottom: OwnedGradient = serde_json::from_str(self.bottom).unwrap();
-        let top: OwnedGradient = serde_json::from_str(self.top).unwrap();
+        let right: OwnedGradient =
+            serde_json::from_str(self.right)
+                .unwrap();
+        let left: OwnedGradient =
+            serde_json::from_str(self.left)
+                .unwrap();
+        let bottom: OwnedGradient =
+            serde_json::from_str(self.bottom)
+                .unwrap();
+        let top: OwnedGradient =
+            serde_json::from_str(self.top)
+                .unwrap();
         GradientVariation {
             left: match_gradient_type!(left),
             right: match_gradient_type!(right),
