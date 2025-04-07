@@ -1,83 +1,64 @@
-use ratatui::{
-    self, DefaultTerminal,
-    crossterm::{
-        cursor,
-        event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
-        execute,
-    },
-};
+use colorgrad::{Color, GradientBuilder};
+use crossterm::event::{self, *};
 use std::io;
-pub use tui_gradient_block::{
-    gradient_block::GradientBlock,
-    gradient_themes::dark::t_midnight_blurple::*,
-    render_example_blocks,
-    types::{
-        enums::BorderStyle,
-        structs::{GradientThemeSet, SplitBorderSegments},
-        typedefinitions::GradientTheme,
-    },
+use tui_gradient_block::{
+    types::G,
+    handle_args, structs::border_symbols::SegmentSet,
 };
-fn run(
-    terminal: &mut DefaultTerminal,
-    style: BorderStyle,
-) -> io::Result<()> {
-    loop {
-        terminal.draw(|f| {
-            let gradblock = GradientBlock::new(
-                &f.area(),
-                SplitBorderSegments::empty(),
-            )
-            .border_style(style.clone())
-            .set_gradients(generate_gradient_theme!(
-                (BorderGradients {
-                    left: vec![(48, 174, 209), (48, 174, 209)],
-                    bottom: vec![(48, 174, 209), (48, 174, 209)],
-                    right: vec![(225, 22, 247), (48, 174, 209)],
-                    top: vec![(48, 174, 209), (225, 22, 247)],
-                    left_fac: 1.0,
-                    bottom_fac: 1.0,
-                    right_fac: 1.0,
-                    top_fac: 1.0,
-                })
-            ));
-            f.render_widget(gradblock, f.area());
-        })?;
-        if let Err(e) = handle_events() {
-            eprintln!("Error handling events: {}", e);
-        }
-    }
-}
-
 fn main() -> io::Result<()> {
-    let style: BorderStyle;
-    style = handle_args!();
-    let _ = color_eyre::install();
+    let arg = handle_args!();
+    let style = SegmentSet::from_ratatui_set(arg);
     let mut terminal = ratatui::init();
     let app_result = run(&mut terminal, style);
     ratatui::restore();
     app_result
 }
+fn solid(col: (u8, u8, u8)) -> G {
+    Box::new(
+        GradientBuilder::new()
+            .colors(&[Color::from_rgba8(col.0, col.1, col.2, 1)])
+            .build::<colorgrad::LinearGradient>()
+            .unwrap(),
+    )
+}
+fn run(
+    terminal: &mut ratatui::DefaultTerminal,
+    set: SegmentSet,
+) -> io::Result<()> {
+    use tui_gradient_block::gradient_block::GradientBlock;
+    let block = GradientBlock::new()
+        .with_set(set)
+        .left_gradient(solid((48, 174, 209)))
+        .bottom_gradient(solid((48, 174, 209)))
+        .top_gradient(Box::new(
+            GradientBuilder::new()
+                .colors(&[
+                    Color::from_rgba8(48, 174, 209, 1),
+                    Color::from_rgba8(225, 22, 247, 1),
+                ])
+                .build::<colorgrad::LinearGradient>()
+                .unwrap(),
+        ))
+        .right_gradient(Box::new(
+            GradientBuilder::new()
+                .colors(&[
+                    Color::from_rgba8(225, 22, 247, 1),
+                    Color::from_rgba8(48, 174, 209, 1),
+                ])
+                .build::<colorgrad::LinearGradient>()
+                .unwrap(),
+        ));
 
-fn handle_events() -> io::Result<()> {
-    match event::read()? {
-        Event::Key(key_event)
-            if key_event.kind == KeyEventKind::Press =>
-        {
-            handle_key_event(key_event)
+    loop {
+        terminal.draw(|f| f.render_widget(&block, f.area()))?;
+        let event = event::read()?;
+
+        if let Event::Key(key_event) = event {
+            if key_event.kind == KeyEventKind::Press {
+                if let KeyCode::Char('q') = key_event.code {
+                    break Ok(());
+                }
+            }
         }
-        _ => Ok(()),
     }
-}
-
-fn handle_key_event(key_event: KeyEvent) -> io::Result<()> {
-    match key_event.code {
-        KeyCode::Char('q') => Ok(exit()),
-        _ => Ok(()),
-    }
-}
-
-fn exit() {
-    ratatui::restore();
-    let _ = execute!(io::stdout(), cursor::Show);
-    std::process::exit(0);
 }

@@ -18,10 +18,10 @@ fn run(
     use ratatui::layout::{Constraint, Direction, Layout};
     use tui_gradient_block::{
         gradient_block::GradientBlock,
-        theme_presets::dark::t_midnight_blurple,
+        theme_presets::cool::t_minty_green,
     };
-    let titles = t_midnight_blurple::titles();
-    let theme = t_midnight_blurple::full();
+    let titles = t_minty_green::titles();
+    let theme = t_minty_green::full();
     let blocks_top = vec![
         GradientBlock::new()
             .title(titles.up.0, titles.up.1)
