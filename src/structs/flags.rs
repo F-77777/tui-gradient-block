@@ -1,5 +1,7 @@
 use bitflags::bitflags;
+// all these really do is make them ' '
 bitflags! {
+    #[derive(PartialEq)]
     pub struct Corners: u32 {
         const NONE = 0;
         const TOP_RIGHT = 1;
@@ -10,6 +12,7 @@ bitflags! {
     }
 }
 bitflags! {
+    #[derive(PartialEq)]
     pub struct CenterSymbols: u32 {
         const NONE = 0;
         const TOP_CENTER = 1;
@@ -20,6 +23,7 @@ bitflags! {
     }
 }
 bitflags! {
+    #[derive(PartialEq)]
     struct RepBorderSymbols: u32 {
         const TOP_VERTICAL_RIGHT    = 1;
         const TOP_VERTICAL_LEFT     = 2;

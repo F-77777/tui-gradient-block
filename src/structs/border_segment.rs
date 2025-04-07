@@ -1,104 +1,70 @@
+use crate::structs::border_symbols::SegmentSet;
+use ratatui::prelude::Alignment;
+use tui_rule::{
+    presets::borders::plain::*, Rule, Set, VerticalAlignment,
+};
 pub struct BorderSegment {
-    /// The text representation of this border segment.  
-    /// - For a top border, this might be `"┌──────┐"`.  
-    /// - For a right border, this might be `"┐││││┘"` (each character is rendered on a separate line from top to bottom, as newlines cannot be rendered directly).
-    pub segment_text:
-        ratatui::text::Line<'static>,
-
-    /// An optional gradient applied to this border segment.  
-    pub gradient:
-        Option<Box<dyn colorgrad::Gradient>>,
-
-    /// Determines whether this segment should be rendered with a gradient.  
-    /// If `false`, the gradient (if present) will be ignored.
-    pub should_use_gradient: bool,
-
-    /// Determines whether the segment should be rendered at all.  
-    /// If `false`, this segment will not be displayed.
-    pub is_vertical: bool,
-
-    /// The X-coordinate of the segment's position.
-    pub x: u16,
-    /// The Y-coordinate of the segment's position.
-    pub y: u16,
+    pub should_be_rendered: bool,
+    pub seg: Rule,
 }
-// #[derive(serde::Serialize, serde::Deserialize, Clone)]
 /// A collection of border segments representing different parts of a bordered structure.  
 ///
 /// This struct holds individual `BorderSegment` instances for each section of the border
 pub struct BorderSegments {
     /// The full top border segment.
-    pub top_ln: BorderSegment,
+    pub top: BorderSegment,
     /// The full bottom border segment.
-    pub bottom_ln: BorderSegment,
+    pub bottom: BorderSegment,
     /// The full left border segment.
-    pub left_ln: BorderSegment,
+    pub left: BorderSegment,
     /// The full right border segment.
-    pub right_ln: BorderSegment,
+    pub right: BorderSegment,
 }
+impl Default for BorderSegments {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl BorderSegments {
-    /// Creates a new set of `BorderSegments` for a given rectangular area.
-    ///
-    /// This constructor initializes border segments based on the provided `Rect` dimensions,
-    /// ensuring correct positioning for all parts of the border.
-    ///
-    /// # Arguments
-    /// * `area` - A reference to a `Rect` defining the bounds of the border.
-    ///
+    /// Creates a new set of `BorderSegments`
     /// # Returns
     /// A `BorderSegments` instance with all segments initialized at their respective positions.
-    pub fn new(
-        area: &ratatui::prelude::Rect,
-    ) -> Self {
-        Self {
-            top_ln: BorderSegment::new(
-                area.left() + 1,
-                area.top(),
-                false,
-            ),
-            bottom_ln: BorderSegment::new(
-                area.left() + 1,
-                area.bottom() - 1,
-                false,
-            ),
-            left_ln: BorderSegment::new(
-                area.left(),
-                area.top() + 1,
-                true,
-            ),
-            right_ln: BorderSegment::new(
-                area.right() - 1,
-                area.top() + 1,
-                true,
-            ),
-        }
+    pub fn new() -> Self {
+        let mut new_self = Self {
+            top: BorderSegment::new(false, TOP),
+            bottom: BorderSegment::new(false, BOTTOM),
+            left: BorderSegment::new(true, LEFT),
+            right: BorderSegment::new(true, RIGHT),
+        };
+        new_self.right.seg.horizontal_alignment = Alignment::Right;
+        new_self.left.seg.horizontal_alignment = Alignment::Left;
+        new_self.bottom.seg.vertical_alignment =
+            VerticalAlignment::Bottom;
+        new_self.top.seg.vertical_alignment = VerticalAlignment::Top;
+        new_self
+    }
+    pub fn from_segment_set(mut self, set: SegmentSet) -> Self {
+        self.right.seg = self.right.seg.with_set(set.right);
+        self.left.seg = self.left.seg.with_set(set.left);
+        self.top.seg = self.top.seg.with_set(set.top);
+        self.bottom.seg = self.bottom.seg.with_set(set.bottom);
+        self
     }
 }
 impl BorderSegment {
-    /// Creates a new, empty border segment at the specified position.  
-    ///
-    /// The segment starts with no text, no gradient, and is not set to be rendered by default.
-    ///
-    /// # Parameters
-    /// - `x`: The X-coordinate of the segment's position.
-    /// - `y`: The Y-coordinate of the segment's position.
-    ///
+    /// The segment starts with a plain rule
+    /// x and y are 0 by default,
     /// # Returns
-    /// A `BorderSegment` instance with default values.
-    pub fn new(
-        x: u16,
-        y: u16,
-        is_vertical: bool,
-    ) -> Self {
+    /// A `BorderSegment` instance with default values
+    pub fn new(is_vertical: bool, set: Set) -> Self {
         Self {
-            segment_text:
-                ratatui::text::Line::raw(""),
-            gradient: None,
-            should_use_gradient: false,
-            is_vertical,
             should_be_rendered: true,
-            x,
-            y,
+            seg: match is_vertical {
+                true => Rule::from_set(set).vertical(),
+                false => Rule::from_set(set).horizontal(),
+            }
+            .area_margin(ratatui::layout::Margin::new(0, 0)),
         }
     }
 }

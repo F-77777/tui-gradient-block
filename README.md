@@ -1,10 +1,14 @@
+
 # tui-gradient-block
 
-### an extension to [ratatui](ratatui.rs)'s block widget with support for border gradients and a lot of different things that the ordinary block doesn't have, allowing for very visually appealing tuis.
-# Note:
+### an extension to ratatui's block widget using colorgrad
+### Note:
+ - Complex gradients may have a brief delay in rendering (no more than 100 ms)
+ - Heavily relies on my other widget called tui-rule (https://crates.io/crates/tui-rule)
+ - A single block is 4 instances of the rule widget (still renders with minimal delay)
+ - Code before 0.1.3 will be COMPLETELY outdated
+ - Updating is highly recommended
 
-this crate is in the experimental versions and some things may not work as expected
-complex border gradients may have a brief delay in rendering (no more than 300 ms)
 
 ### Features
 
@@ -14,32 +18,44 @@ complex border gradients may have a brief delay in rendering (no more than 300 m
   - [x] titles
 - [x] fully customizable borders
 - [x] fill text
+- [x] padding
+- [x] margin
 - [x] pre-defined border styles
-- [x] border themes (midnight blurple, misty blue, rusty ruins)
+- [x] gradient themes 
+    - 14 variations for each theme
 ```rust
 fn render_gradient_block(frame: &mut Frame) {
-    let gradblock = tui_gradientblock::new(&frame.area(), SplitBorderSegments::NONE)
-    // Using Vec<GradientSegment, Gradient> works, but it may be tedious and make code unreadable. we (im the only one in this project) recommend using the generate_gradient_theme macro for simplicity
-        .set_gradients(generate_gradient_theme!(
-            BorderGradients {
-                left: vec![(48, 174, 209), (48, 174, 209)],
-                bottom: vec![(48, 174, 209), (48, 174, 209)],
-                right: vec![(225, 22, 247), (48, 174, 209)],
-                top: vec![(48, 174, 209), (225, 22, 247)],
-                left_fac: 1.0,
-                bottom_fac: 1.0,
-                right_fac: 1.0,
-                top_fac: 1.0,
-            }
+    let block = GradientBlock::new()
+	    .left_gradient(solid((48, 174, 209)))
+        .bottom_gradient(solid((48, 174, 209)))
+        .top_gradient(Box::new(
+            GradientBuilder::new()
+                .colors(&[
+                    Color::from_rgba8(48, 174, 209, 1),
+                    Color::from_rgba8(225, 22, 247, 1),
+                ])
+                .build::<colorgrad::LinearGradient>()
+                .unwrap(),
         ))
-        .top_titles(vec![(
-            "Top title".to_owned(),
-            TitleAlignment::Centered,
-            Some((vec![(14, 67, 240), (90, 34, 128)], 1.0)),
-        )])
-        .set_lines();
+        .right_gradient(Box::new(
+            GradientBuilder::new()
+                .colors(&[
+                    Color::from_rgba8(225, 22, 247, 1),
+                    Color::from_rgba8(48, 174, 209, 1),
+                ])
+                .build::<colorgrad::LinearGradient>()
+                .unwrap(),
+        ))
+        .title_top(Line::from(generate_gradient_text!(
+	            "Top title",
+	            GradientBuilder::new().colors(&[
+		            Color::from_rgba8(14, 67, 240), 
+		            Color::from_rgba8(90, 34, 128)
+			    ]).build::<colorgrad::LinearGradient>()
+			    .unwrap()
+        )).centered());
 
-    frame.render_widget(gradblock, frame.area());
+    frame.render_widget(block, frame.area());
 }
 
 ```
@@ -51,7 +67,6 @@ fn render_gradient_block(frame: &mut Frame) {
 [![3dhR92I.md.png](https://iili.io/3dhR92I.md.png)](https://freeimage.host/i/3dhR92I)
 
 ## pre-defined gradient themes
-the shown gradient is rusty ruins, and each gradient theme has 14 (soon to be 16) variations
-![rusty ruins](https://iili.io/33DEVjI.gif)
-
-please give me recommendations on pre-defined border themes and border styles
+![](https://iili.io/37y0pSt.png)
+![](https://iili.io/37yE3kF.md.png)
+Some of the gradients are from [colormagic](https://colormagic.app/)
